@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Recordings live in the app's private files/recordings dir; expose it to
+         the share sheet so other apps can read the file we hand them. -->
+    <files-path
+        name="recordings"
+        path="recordings/" />
+    <cache-path
+        name="shared"
+        path="shared/" />
+</paths>

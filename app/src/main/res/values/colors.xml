@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirrors the brand palette so the window background matches Compose. -->
+    <color name="brand_background">#FF2B2B2B</color>
+    <color name="brand_accent">#FFE57373</color>
+</resources>

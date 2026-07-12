@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App-wide theme is driven by Compose (see ui/theme). This base theme
+         only sets the window background so the cold-start frame is dark, not
+         a white flash before Compose draws. -->
+    <style name="Theme.ElendheimRecorder" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/brand_background</item>
+        <item name="android:statusBarColor">@color/brand_background</item>
+        <item name="android:navigationBarColor">@color/brand_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
