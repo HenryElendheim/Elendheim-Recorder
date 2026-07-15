@@ -28,7 +28,7 @@
 
     <string name="export_title">Export recording</string>
     <string name="export_wav">WAV (lossless master)</string>
-    <string name="export_m4a">M4A (compact, AAC)</string>
+    <string name="export_mp3">MP3 (compact)</string>
     <string name="export_saved">Saved to your Music folder</string>
     <string name="export_failed">Export failed</string>
 

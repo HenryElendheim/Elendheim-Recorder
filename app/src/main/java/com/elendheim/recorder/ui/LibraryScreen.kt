@@ -13,9 +13,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -41,59 +46,153 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elendheim.recorder.export.ExportFormat
 import com.elendheim.recorder.library.Recording
-import com.elendheim.recorder.ui.theme.RecorderAccent
-import com.elendheim.recorder.ui.theme.RecorderSurface
-import com.elendheim.recorder.ui.theme.RecorderTextDim
 
 @Composable
 fun LibraryScreen(
     recordings: List<Recording>,
+    folders: List<String>,
     playback: PlaybackState,
     onTogglePlay: (Recording) -> Unit,
     onSeek: (Int) -> Unit,
     onRename: (Recording, String) -> Unit,
     onDelete: (Recording) -> Unit,
+    onMove: (Recording, String) -> Unit,
+    onCreateFolder: (String) -> Unit,
+    onRenameFolder: (String, String) -> Unit,
+    onDeleteFolder: (String) -> Unit,
     onExport: (Recording, ExportFormat) -> Unit,
     onShare: (Recording, ExportFormat) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
+    var query by remember { mutableStateOf("") }
+    var currentFolder by remember { mutableStateOf<String?>(null) }
+
     var renameTarget by remember { mutableStateOf<Recording?>(null) }
     var deleteTarget by remember { mutableStateOf<Recording?>(null) }
     var exportTarget by remember { mutableStateOf<Recording?>(null) }
     var shareTarget by remember { mutableStateOf<Recording?>(null) }
+    var moveTarget by remember { mutableStateOf<Recording?>(null) }
+    var newFolderDialog by remember { mutableStateOf(false) }
+    var renameFolderTarget by remember { mutableStateOf<String?>(null) }
+    var deleteFolderTarget by remember { mutableStateOf<String?>(null) }
 
-    if (recordings.isEmpty()) {
-        EmptyLibrary(modifier)
-    } else {
-        LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp)
+    val searching = query.isNotBlank()
+    val q = query.trim()
+
+    val visibleFolders = if (searching) folders.filter { it.contains(q, ignoreCase = true) } else folders
+    val visibleRecordings = when {
+        searching -> recordings.filter { it.displayName.contains(q, ignoreCase = true) }
+        currentFolder == null -> recordings.filter { it.folder.isEmpty() }
+        else -> recordings.filter { it.folder.equals(currentFolder, ignoreCase = true) }
+    }
+
+    Column(modifier = modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            items(recordings, key = { it.id }) { recording ->
-                RecordingRow(
-                    recording = recording,
-                    playback = playback,
-                    onTogglePlay = { onTogglePlay(recording) },
-                    onSeek = onSeek,
-                    onRename = { renameTarget = recording },
-                    onExport = { exportTarget = recording },
-                    onShare = { shareTarget = recording },
-                    onDelete = { deleteTarget = recording }
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Search recordings and folders") },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { query = "" }) {
+                            Icon(Icons.Filled.Clear, contentDescription = "Clear search")
+                        }
+                    }
+                }
+            )
+            IconButton(onClick = { newFolderDialog = true }) {
+                Icon(Icons.Filled.CreateNewFolder, contentDescription = "New folder", tint = colors.primary)
+            }
+        }
+
+        if (!searching && currentFolder != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { currentFolder = null }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to top level")
+                }
+                Text(
+                    text = currentFolder ?: "",
+                    color = colors.onBackground,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.weight(1f)
                 )
+                Box {
+                    var menu by remember { mutableStateOf(false) }
+                    IconButton(onClick = { menu = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "Folder actions", tint = colors.onSurfaceVariant)
+                    }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(text = { Text("Rename folder") }, onClick = {
+                            menu = false; renameFolderTarget = currentFolder
+                        })
+                        DropdownMenuItem(text = { Text("Delete folder") }, onClick = {
+                            menu = false; deleteFolderTarget = currentFolder
+                        })
+                    }
+                }
+            }
+        }
+
+        if (visibleFolders.isEmpty() && visibleRecordings.isEmpty()) {
+            EmptyState(searching)
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp)
+            ) {
+                val showFolders = searching || currentFolder == null
+                if (showFolders) {
+                    items(visibleFolders, key = { "folder:$it" }) { folder ->
+                        FolderRow(
+                            name = folder,
+                            count = recordings.count { it.folder.equals(folder, ignoreCase = true) },
+                            onOpen = { query = ""; currentFolder = folder }
+                        )
+                    }
+                }
+                items(visibleRecordings, key = { it.id }) { recording ->
+                    RecordingRow(
+                        recording = recording,
+                        playback = playback,
+                        onTogglePlay = { onTogglePlay(recording) },
+                        onSeek = onSeek,
+                        onRename = { renameTarget = recording },
+                        onMove = { moveTarget = recording },
+                        onExport = { exportTarget = recording },
+                        onShare = { shareTarget = recording },
+                        onDelete = { deleteTarget = recording }
+                    )
+                }
             }
         }
     }
 
+    // --- Dialogs ---
+
     renameTarget?.let { target ->
-        RenameDialog(
+        TextInputDialog(
+            title = "Rename recording",
             initial = target.displayName,
-            onConfirm = { newName ->
-                onRename(target, newName)
-                renameTarget = null
-            },
+            confirmLabel = "Save",
+            onConfirm = { onRename(target, it); renameTarget = null },
             onDismiss = { renameTarget = null }
         )
     }
@@ -104,24 +203,18 @@ fun LibraryScreen(
             title = { Text("Delete recording?") },
             text = { Text("This removes \"${target.displayName}\" from your library. It cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = {
-                    onDelete(target)
-                    deleteTarget = null
-                }) { Text("Delete", color = RecorderAccent) }
+                TextButton(onClick = { onDelete(target); deleteTarget = null }) {
+                    Text("Delete", color = colors.primary)
+                }
             },
-            dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) { Text("Cancel") }
-            }
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel") } }
         )
     }
 
     exportTarget?.let { target ->
         FormatDialog(
-            title = "Save to Music",
-            onPick = { format ->
-                onExport(target, format)
-                exportTarget = null
-            },
+            title = "Export to files",
+            onPick = { onExport(target, it); exportTarget = null },
             onDismiss = { exportTarget = null }
         )
     }
@@ -129,12 +222,69 @@ fun LibraryScreen(
     shareTarget?.let { target ->
         FormatDialog(
             title = "Share as",
-            onPick = { format ->
-                onShare(target, format)
-                shareTarget = null
-            },
+            onPick = { onShare(target, it); shareTarget = null },
             onDismiss = { shareTarget = null }
         )
+    }
+
+    moveTarget?.let { target ->
+        MoveDialog(
+            folders = folders,
+            current = target.folder,
+            onPick = { onMove(target, it); moveTarget = null },
+            onNewFolder = { moveTarget = null; newFolderDialog = true },
+            onDismiss = { moveTarget = null }
+        )
+    }
+
+    if (newFolderDialog) {
+        TextInputDialog(
+            title = "New folder",
+            initial = "",
+            confirmLabel = "Create",
+            onConfirm = { onCreateFolder(it); newFolderDialog = false },
+            onDismiss = { newFolderDialog = false }
+        )
+    }
+
+    renameFolderTarget?.let { target ->
+        TextInputDialog(
+            title = "Rename folder",
+            initial = target,
+            confirmLabel = "Save",
+            onConfirm = { onRenameFolder(target, it); currentFolder = it.trim(); renameFolderTarget = null },
+            onDismiss = { renameFolderTarget = null }
+        )
+    }
+
+    deleteFolderTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { deleteFolderTarget = null },
+            title = { Text("Delete folder?") },
+            text = { Text("\"$target\" will be removed. Its recordings move back to the top level and are not deleted.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteFolder(target); currentFolder = null; deleteFolderTarget = null
+                }) { Text("Delete", color = colors.primary) }
+            },
+            dismissButton = { TextButton(onClick = { deleteFolderTarget = null }) { Text("Cancel") } }
+        )
+    }
+}
+
+@Composable
+private fun FolderRow(name: String, count: Int, onOpen: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(onClick = onOpen, color = colors.surface, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Folder, contentDescription = null, tint = colors.primary, modifier = Modifier.size(26.dp))
+            Spacer(Modifier.size(12.dp))
+            Text(name, color = colors.onSurface, fontWeight = FontWeight.Medium, fontSize = 16.sp, modifier = Modifier.weight(1f))
+            Text("$count", color = colors.onSurfaceVariant, fontSize = 13.sp)
+        }
     }
 }
 
@@ -145,22 +295,24 @@ private fun RecordingRow(
     onTogglePlay: () -> Unit,
     onSeek: (Int) -> Unit,
     onRename: () -> Unit,
+    onMove: () -> Unit,
     onExport: () -> Unit,
     onShare: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     var menuOpen by remember { mutableStateOf(false) }
     val isActive = playback.playingId == recording.id
     val isPlaying = isActive && playback.isPlaying
 
-    Card(colors = CardDefaults.cardColors(containerColor = RecorderSurface)) {
+    Card(colors = CardDefaults.cardColors(containerColor = colors.surface)) {
         Column(Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onTogglePlay) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                         contentDescription = if (isPlaying) "Pause" else "Play",
-                        tint = RecorderAccent,
+                        tint = colors.primary,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -168,7 +320,7 @@ private fun RecordingRow(
                 Column(Modifier.weight(1f)) {
                     Text(
                         text = recording.displayName,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = colors.onSurface,
                         fontWeight = FontWeight.Medium,
                         fontSize = 16.sp,
                         maxLines = 1
@@ -176,22 +328,19 @@ private fun RecordingRow(
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = "${Format.clock(recording.durationMs)}  ·  ${Format.date(recording.createdAt)}  ·  ${Format.size(recording.sizeBytes)}",
-                        color = RecorderTextDim,
+                        color = colors.onSurfaceVariant,
                         fontSize = 12.sp,
                         maxLines = 1
                     )
                 }
                 Box {
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = "More actions",
-                            tint = RecorderTextDim
-                        )
+                        Icon(Icons.Filled.MoreVert, contentDescription = "More actions", tint = colors.onSurfaceVariant)
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(text = { Text("Rename") }, onClick = { menuOpen = false; onRename() })
-                        DropdownMenuItem(text = { Text("Save to Music") }, onClick = { menuOpen = false; onExport() })
+                        DropdownMenuItem(text = { Text("Move to folder") }, onClick = { menuOpen = false; onMove() })
+                        DropdownMenuItem(text = { Text("Export to files") }, onClick = { menuOpen = false; onExport() })
                         DropdownMenuItem(text = { Text("Share") }, onClick = { menuOpen = false; onShare() })
                         DropdownMenuItem(text = { Text("Delete") }, onClick = { menuOpen = false; onDelete() })
                     }
@@ -206,8 +355,8 @@ private fun RecordingRow(
                     valueRange = 0f..(if (duration > 0) duration.toFloat() else 1f)
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(Format.clock(playback.positionMs), color = RecorderTextDim, fontSize = 11.sp)
-                    Text(Format.clock(duration), color = RecorderTextDim, fontSize = 11.sp)
+                    Text(Format.clock(playback.positionMs), color = colors.onSurfaceVariant, fontSize = 11.sp)
+                    Text(Format.clock(duration), color = colors.onSurfaceVariant, fontSize = 11.sp)
                 }
             }
         }
@@ -215,24 +364,24 @@ private fun RecordingRow(
 }
 
 @Composable
-private fun RenameDialog(initial: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+private fun TextInputDialog(
+    title: String,
+    initial: String,
+    confirmLabel: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
     var text by remember { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Rename recording") },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                singleLine = true
-            )
-        },
+        title = { Text(title) },
+        text = { OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true) },
         confirmButton = {
-            TextButton(onClick = { onConfirm(text) }) { Text("Save", color = RecorderAccent) }
+            TextButton(onClick = { onConfirm(text) }, enabled = text.isNotBlank()) {
+                Text(confirmLabel, color = MaterialTheme.colorScheme.primary)
+            }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
 
@@ -243,46 +392,69 @@ private fun FormatDialog(title: String, onPick: (ExportFormat) -> Unit, onDismis
         title = { Text(title) },
         text = {
             Column {
-                FormatOption("WAV — lossless master", "Full quality, larger file") { onPick(ExportFormat.WAV) }
+                OptionRow("WAV — lossless master", "Full quality, larger file") { onPick(ExportFormat.WAV) }
                 Spacer(Modifier.height(8.dp))
-                FormatOption("M4A — compact (AAC)", "Smaller file, great for sharing") { onPick(ExportFormat.M4A) }
+                OptionRow("MP3 — compact", "Smaller file, plays everywhere") { onPick(ExportFormat.MP3) }
             }
         },
         confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
 
 @Composable
-private fun FormatOption(title: String, subtitle: String, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        color = RecorderSurface,
-        modifier = Modifier.fillMaxWidth()
-    ) {
+private fun MoveDialog(
+    folders: List<String>,
+    current: String,
+    onPick: (String) -> Unit,
+    onNewFolder: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Move to folder") },
+        text = {
+            Column {
+                OptionRow("Top level", if (current.isEmpty()) "Current" else "No folder") { onPick("") }
+                folders.forEach { folder ->
+                    Spacer(Modifier.height(6.dp))
+                    OptionRow(folder, if (folder.equals(current, ignoreCase = true)) "Current" else "") { onPick(folder) }
+                }
+                Spacer(Modifier.height(6.dp))
+                OptionRow("New folder…", "Create and move here") { onNewFolder() }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+private fun OptionRow(title: String, subtitle: String, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(onClick = onClick, color = colors.surface, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(vertical = 10.dp, horizontal = 12.dp)) {
-            Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
-            Text(subtitle, color = RecorderTextDim, fontSize = 12.sp)
+            Text(title, color = colors.onSurface, fontWeight = FontWeight.Medium)
+            if (subtitle.isNotEmpty()) Text(subtitle, color = colors.onSurfaceVariant, fontSize = 12.sp)
         }
     }
 }
 
 @Composable
-private fun EmptyLibrary(modifier: Modifier) {
-    Box(modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+private fun EmptyState(searching: Boolean) {
+    val colors = MaterialTheme.colorScheme
+    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                "No recordings yet",
-                color = MaterialTheme.colorScheme.onBackground,
+                if (searching) "No matches" else "No recordings yet",
+                color = colors.onBackground,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Medium
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Tap the record button to capture your first take.",
-                color = RecorderTextDim,
+                if (searching) "Try a different search." else "Tap the record button to capture your first take.",
+                color = colors.onSurfaceVariant,
                 fontSize = 14.sp
             )
         }

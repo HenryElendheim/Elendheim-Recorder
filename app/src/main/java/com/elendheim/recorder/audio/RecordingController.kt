@@ -11,7 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 data class RecorderState(
     val isRecording: Boolean = false,
     val elapsedMs: Long = 0L,
-    val amplitude: Float = 0f    // normalised 0..1 for the level meter
+    val amplitude: Float = 0f,   // normalised 0..1 for the level meter
+    val pitch: String? = null    // e.g. "C4", when pitch display is enabled
 )
 
 /**
@@ -28,8 +29,13 @@ object RecordingController {
     private val _finished = MutableSharedFlow<Unit>(extraBufferCapacity = 4)
     val finished: SharedFlow<Unit> = _finished.asSharedFlow()
 
-    fun update(elapsedMs: Long, amplitude: Float) {
-        _state.value = RecorderState(isRecording = true, elapsedMs = elapsedMs, amplitude = amplitude)
+    fun update(elapsedMs: Long, amplitude: Float, pitch: String?) {
+        _state.value = RecorderState(
+            isRecording = true,
+            elapsedMs = elapsedMs,
+            amplitude = amplitude,
+            pitch = pitch
+        )
     }
 
     fun markIdle() {

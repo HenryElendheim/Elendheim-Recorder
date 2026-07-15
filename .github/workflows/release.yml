@@ -10,7 +10,7 @@ on:
       notes:
         description: "Release notes"
         required: false
-        default: "Records audio from your phone mic, keeps a library you can play, rename and delete, and exports your takes to WAV or M4A. Dark mode, no cloud, no accounts."
+        default: "Records from your phone mic, keeps a searchable library with folders, and exports your takes to WAV or MP3. Dark mode, no cloud, no accounts."
 
 permissions:
   contents: write

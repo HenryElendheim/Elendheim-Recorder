@@ -7,5 +7,6 @@ data class Recording(
     val fileName: String,      // actual file on disk
     val durationMs: Long,
     val sizeBytes: Long,
-    val createdAt: Long
+    val createdAt: Long,
+    val folder: String = ""    // "" means the top level (no folder)
 )

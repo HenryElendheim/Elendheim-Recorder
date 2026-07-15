@@ -16,6 +16,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.elendheim.recorder.MainActivity
 import com.elendheim.recorder.R
+import com.elendheim.recorder.data.SettingsStore
 import com.elendheim.recorder.library.RecordingStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -73,8 +74,9 @@ class RecordingService : Service() {
         // call startForeground promptly, even if the mic then fails to open.
         startForegroundNotification(0L)
 
+        val settings = SettingsStore.get(applicationContext).current
         val pcm = pcmFile ?: return
-        if (!startCapture(pcm)) {
+        if (!startCapture(pcm, settings.monitoring, settings.showPitch)) {
             RecordingController.markIdle()
             pcmFile = null
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
@@ -86,7 +88,7 @@ class RecordingService : Service() {
             var lastSecondShown = -1L
             while (isActive && recorder.isRecording) {
                 val elapsed = System.currentTimeMillis() - startedAt
-                RecordingController.update(elapsed, recorder.currentAmplitude)
+                RecordingController.update(elapsed, recorder.currentAmplitude, recorder.currentPitch)
                 val second = elapsed / 1000
                 if (second != lastSecondShown) {
                     lastSecondShown = second
@@ -98,7 +100,8 @@ class RecordingService : Service() {
     }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    private fun startCapture(pcm: File): Boolean = recorder.start(pcm)
+    private fun startCapture(pcm: File, monitor: Boolean, detectPitch: Boolean): Boolean =
+        recorder.start(pcm, monitor, detectPitch)
 
     private fun stopRecording() {
         if (!recorder.isRecording && pcmFile == null) {

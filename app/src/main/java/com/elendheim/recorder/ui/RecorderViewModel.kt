@@ -2,10 +2,12 @@ package com.elendheim.recorder.ui
 
 import android.app.Application
 import android.media.MediaPlayer
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.elendheim.recorder.audio.RecordingController
 import com.elendheim.recorder.audio.RecordingService
+import com.elendheim.recorder.data.SettingsStore
 import com.elendheim.recorder.export.ExportFormat
 import com.elendheim.recorder.export.Exporter
 import com.elendheim.recorder.library.Recording
@@ -33,11 +35,16 @@ data class PlaybackState(
 class RecorderViewModel(app: Application) : AndroidViewModel(app) {
 
     private val store = RecordingStore(app)
+    private val settingsStore = SettingsStore.get(app)
 
     val recorderState = RecordingController.state
+    val settings = settingsStore.settings
 
     private val _library = MutableStateFlow<List<Recording>>(emptyList())
     val library: StateFlow<List<Recording>> = _library.asStateFlow()
+
+    private val _folders = MutableStateFlow<List<String>>(emptyList())
+    val folders: StateFlow<List<String>> = _folders.asStateFlow()
 
     private val _playback = MutableStateFlow(PlaybackState())
     val playback: StateFlow<PlaybackState> = _playback.asStateFlow()
@@ -57,7 +64,14 @@ class RecorderViewModel(app: Application) : AndroidViewModel(app) {
 
     fun refresh() {
         _library.value = store.list()
+        _folders.value = store.folders()
     }
+
+    // --- Settings ---
+
+    fun setHighContrast(value: Boolean) = settingsStore.setHighContrast(value)
+    fun setShowPitch(value: Boolean) = settingsStore.setShowPitch(value)
+    fun setMonitoring(value: Boolean) = settingsStore.setMonitoring(value)
 
     // --- Recording ---
 
@@ -75,6 +89,26 @@ class RecorderViewModel(app: Application) : AndroidViewModel(app) {
     fun delete(id: String) {
         if (_playback.value.playingId == id) stopPlayback()
         store.delete(id)
+        refresh()
+    }
+
+    fun moveToFolder(id: String, folder: String) {
+        store.moveToFolder(id, folder)
+        refresh()
+    }
+
+    fun createFolder(name: String) {
+        store.createFolder(name)
+        refresh()
+    }
+
+    fun renameFolder(oldName: String, newName: String) {
+        store.renameFolder(oldName, newName)
+        refresh()
+    }
+
+    fun deleteFolder(name: String) {
+        store.deleteFolder(name)
         refresh()
     }
 
@@ -154,12 +188,15 @@ class RecorderViewModel(app: Application) : AndroidViewModel(app) {
 
     // --- Export ---
 
-    fun exportToMusic(recording: Recording, format: ExportFormat) {
+    fun suggestedFileName(recording: Recording, format: ExportFormat): String =
+        Exporter.suggestedFileName(recording, format)
+
+    fun exportToUri(uri: Uri, recording: Recording, format: ExportFormat) {
         viewModelScope.launch {
-            val where = withContext(Dispatchers.IO) {
-                Exporter.saveToMusic(getApplication(), store, recording, format)
+            val ok = withContext(Dispatchers.IO) {
+                Exporter.writeToUri(getApplication(), store, recording, format, uri)
             }
-            _messages.tryEmit(if (where != null) "Saved to $where" else "Export failed")
+            _messages.tryEmit(if (ok) "Exported as ${format.label}" else "Export failed")
         }
     }
 

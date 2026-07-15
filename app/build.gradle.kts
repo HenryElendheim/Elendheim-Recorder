@@ -12,8 +12,8 @@ android {
         applicationId = "com.elendheim.recorder"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0"
     }
 
     buildTypes {
@@ -50,5 +50,6 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.android.lame)
     debugImplementation(libs.androidx.ui.tooling)
 }

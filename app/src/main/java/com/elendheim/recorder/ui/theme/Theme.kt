@@ -5,9 +5,9 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
-// Dark-mode first, by design. There is no light scheme: the app is meant to
-// live in the dark-gray-and-soft-red world of the Elendheim suite.
-private val ElendheimColors = darkColorScheme(
+// Dark-mode first, by design. Two schemes: the standard look, and a
+// high-contrast variant driven by the accessibility setting.
+private val StandardColors = darkColorScheme(
     primary = RecorderAccent,
     onPrimary = RecorderBackground,
     secondary = RecorderAccent,
@@ -18,14 +18,34 @@ private val ElendheimColors = darkColorScheme(
     onSurface = RecorderText,
     surfaceVariant = RecorderSurface,
     onSurfaceVariant = RecorderTextDim,
+    outline = RecorderTextDim,
     error = RecorderAccent,
     onError = RecorderBackground
 )
 
+private val HighContrastColors = darkColorScheme(
+    primary = HcAccent,
+    onPrimary = HcBackground,
+    secondary = HcAccent,
+    onSecondary = HcBackground,
+    background = HcBackground,
+    onBackground = HcText,
+    surface = HcSurface,
+    onSurface = HcText,
+    surfaceVariant = HcSurface,
+    onSurfaceVariant = HcTextDim,
+    outline = HcOutline,
+    error = HcAccent,
+    onError = HcBackground
+)
+
 @Composable
-fun ElendheimRecorderTheme(content: @Composable () -> Unit) {
+fun ElendheimRecorderTheme(
+    highContrast: Boolean = false,
+    content: @Composable () -> Unit
+) {
     MaterialTheme(
-        colorScheme = ElendheimColors,
+        colorScheme = if (highContrast) HighContrastColors else StandardColors,
         typography = Typography(),
         content = content
     )

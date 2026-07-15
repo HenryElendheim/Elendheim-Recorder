@@ -13,37 +13,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elendheim.recorder.audio.RecorderState
-import com.elendheim.recorder.ui.theme.RecorderAccent
-import com.elendheim.recorder.ui.theme.RecorderSurface
-import com.elendheim.recorder.ui.theme.RecorderTextDim
 
 @Composable
 fun RecordScreen(
     state: RecorderState,
+    showPitch: Boolean,
     onToggleRecord: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -55,17 +52,33 @@ fun RecordScreen(
             text = Format.clock(state.elapsedMs),
             fontSize = 64.sp,
             fontWeight = FontWeight.Light,
-            color = MaterialTheme.colorScheme.onBackground
+            color = colors.onBackground
         )
 
         Spacer(Modifier.height(8.dp))
 
         Text(
             text = if (state.isRecording) "Recording" else "Ready",
-            color = if (state.isRecording) RecorderAccent else RecorderTextDim,
+            color = if (state.isRecording) colors.primary else colors.onSurfaceVariant,
             fontSize = 16.sp,
             letterSpacing = 2.sp
         )
+
+        if (showPitch) {
+            Spacer(Modifier.height(20.dp))
+            Text(
+                text = if (state.isRecording) (state.pitch ?: "—") else "—",
+                color = colors.primary,
+                fontSize = 40.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "pitch",
+                color = colors.onSurfaceVariant,
+                fontSize = 12.sp,
+                letterSpacing = 2.sp
+            )
+        }
 
         Spacer(Modifier.height(40.dp))
 
@@ -79,6 +92,7 @@ fun RecordScreen(
 
 @Composable
 private fun RecordButton(isRecording: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
     val scale by animateFloatAsState(
         targetValue = if (isRecording) 0.92f else 1f,
         animationSpec = tween(200),
@@ -87,7 +101,7 @@ private fun RecordButton(isRecording: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = CircleShape,
-        color = RecorderAccent,
+        color = colors.primary,
         modifier = Modifier
             .size(112.dp)
             .scale(scale)
@@ -96,7 +110,7 @@ private fun RecordButton(isRecording: Boolean, onClick: () -> Unit) {
             Icon(
                 imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
                 contentDescription = if (isRecording) "Stop recording" else "Start recording",
-                tint = Color(0xFF2B2B2B),
+                tint = colors.onPrimary,
                 modifier = Modifier.size(44.dp)
             )
         }
@@ -105,7 +119,7 @@ private fun RecordButton(isRecording: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun LevelMeter(amplitude: Float) {
-    // A calm row of bars that rise with the loudest samples in the last buffer.
+    val colors = MaterialTheme.colorScheme
     val bars = 24
     Row(
         modifier = Modifier
@@ -115,7 +129,6 @@ private fun LevelMeter(amplitude: Float) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         for (i in 0 until bars) {
-            // Bars near the centre react a touch more, giving a natural shape.
             val distanceFromCentre = kotlin.math.abs(i - bars / 2f) / (bars / 2f)
             val weight = 1f - distanceFromCentre * 0.5f
             val level = (amplitude * weight).coerceIn(0f, 1f)
@@ -129,7 +142,7 @@ private fun LevelMeter(amplitude: Float) {
                     .weight(1f)
                     .height(barHeight.dp)
                     .clip(RoundedCornerShape(3.dp))
-                    .background(if (level > 0.02f) RecorderAccent else RecorderSurface)
+                    .background(if (level > 0.02f) colors.primary else colors.surface)
             )
         }
     }

@@ -9,15 +9,20 @@ actually own — no cloud, no accounts, no analytics.
 - One-tap recording from the mic, with a live timer and level meter.
 - Long sessions survive screen-off and backgrounding (a foreground service
   keeps the mic alive with an ongoing notification).
-- A library of your takes: play with a scrubber, rename, and delete.
-- Export to WAV (lossless master) or M4A (compact AAC), and share anywhere
-  through the Android share sheet.
-- Opens with the reusable Elendheim intro — dark gray, soft red.
+- A library of your takes: play with a scrubber, rename, delete, organise into
+  folders, and search by name.
+- Export to WAV (lossless master) or MP3 (compact), saved wherever you choose
+  or shared through the Android share sheet.
+- A settings menu with accessibility options: high contrast, a live pitch
+  display (C4, F#4 and so on) while recording, and headphone monitoring so you
+  can hear yourself as you go.
+- Opens with the reusable Elendheim intro.
 
 ## Design
 
 Dark-mode first, on purpose. Dark gray (`#2B2B2B`) with a soft red accent
-(`#E57373`), the shared look of the Elendheim suite.
+(`#E57373`), the shared look of the Elendheim suite. A high-contrast mode in
+settings switches to pure black and white with a brighter accent.
 
 The app has no `INTERNET` permission, so it cannot phone home — you can verify
 that in the manifest. Recordings live in app-private storage; exporting copies
@@ -31,16 +36,18 @@ Android SDK installed). Minimum Android 8.0 (API 26).
 - Language: Kotlin
 - UI: Jetpack Compose
 - Audio: `AudioRecord` -> raw PCM -> WAV, written to disk as it records
-- Compact export: AAC/M4A via the built-in `MediaCodec` (no NDK)
+- MP3 export: LAME, bundled as a prebuilt native library (no NDK build here)
+- Pitch: a YIN-style estimator over the live buffer
 
 ## Structure
 
 ```
 com.elendheim.branding      Portable intro module (drop into any Elendheim app)
 com.elendheim.recorder
-  audio/     Recorder, WavWriter, RecordingService (foreground service)
-  export/    AacEncoder, Exporter (MediaStore + share sheet)
-  library/   RecordingStore (list, rename, delete)
+  audio/     Recorder, WavWriter, RecordingService, PitchDetector
+  export/    Mp3Encoder (LAME), Exporter (Files + share sheet)
+  library/   RecordingStore (list, rename, delete, folders)
+  data/      SettingsStore
   ui/        Compose screens, theme, view model
 ```
 
@@ -50,9 +57,8 @@ dependencies, so it lifts straight into the next app.
 
 ## Roadmap
 
-- MP3 export via a bundled LAME encoder (Android has no native MP3 encoder).
-- Pause and resume, undo-delete trash, and a small settings screen
-  (default format, sample rate, bitrate).
+- Pause and resume, undo-delete trash.
+- Per-recording bitrate/sample-rate choices in settings.
 
 ## License
 

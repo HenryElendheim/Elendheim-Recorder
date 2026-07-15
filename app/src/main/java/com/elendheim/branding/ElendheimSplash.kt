@@ -4,7 +4,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,23 +18,29 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 /**
- * Drop-in Elendheim splash. Copy the `branding` package into any app and call:
+ * Drop-in Elendheim splash. A bold white wordmark with an optional coloured
+ * sub-word beneath it. Copy the `branding` package into any app and call:
  *
  *   var showSplash by remember { mutableStateOf(true) }
- *   if (showSplash) ElendheimSplash { showSplash = false }
+ *   if (showSplash) ElendheimSplash(subWord = "Recorder") { showSplash = false }
  *   else AppContent()
  *
- * Nothing app-specific lives inside, which is what keeps it portable: one
- * palette file, one Composable, one callback.
+ * Kept short on purpose: the whole thing runs in well under a second so it
+ * greets you without getting in the way.
  */
 @Composable
 fun ElendheimSplash(
-    holdMillis: Int = 1400,
-    fadeMillis: Int = 700,
+    subWord: String? = null,
+    subColor: Color = Color(0xFFE57373),
+    holdMillis: Int = 160,
+    fadeMillis: Int = 120,
     onFinished: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -52,16 +61,28 @@ fun ElendheimSplash(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ElendheimBrand.Background),
+            .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = ElendheimBrand.WordMark,
-            color = ElendheimBrand.SoftRed,
-            fontSize = ElendheimBrand.WordSize,
-            fontWeight = FontWeight.Light,
-            letterSpacing = ElendheimBrand.WordSpacing,
-            modifier = Modifier.alpha(alpha)
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = ElendheimBrand.WordMark,
+                color = Color.White,
+                fontSize = ElendheimBrand.WordSize,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.alpha(alpha)
+            )
+            if (subWord != null) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = subWord,
+                    color = subColor,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 6.sp,
+                    modifier = Modifier.alpha(alpha)
+                )
+            }
+        }
     }
 }
