@@ -50,6 +50,10 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.android.lame)
+    // LAME (MP3). Exclude its legacy Android Support transitive dep; it clashes
+    // with AndroidX and we only need the encoder classes plus the native lib.
+    implementation(libs.android.lame) {
+        exclude(group = "com.android.support")
+    }
     debugImplementation(libs.androidx.ui.tooling)
 }
