@@ -62,6 +62,7 @@ fun LibraryScreen(
     onDeleteFolder: (String) -> Unit,
     onExport: (Recording, ExportFormat) -> Unit,
     onShare: (Recording, ExportFormat) -> Unit,
+    confirmDelete: Boolean,
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
@@ -82,7 +83,7 @@ fun LibraryScreen(
 
     val visibleFolders = if (searching) folders.filter { it.contains(q, ignoreCase = true) } else folders
     val visibleRecordings = when {
-        searching -> recordings.filter { it.displayName.contains(q, ignoreCase = true) }
+        searching -> recordings.filter { Format.matches(it.displayName, it.createdAt, q) }
         currentFolder == null -> recordings.filter { it.folder.isEmpty() }
         else -> recordings.filter { it.folder.equals(currentFolder, ignoreCase = true) }
     }
@@ -99,7 +100,7 @@ fun LibraryScreen(
                 onValueChange = { query = it },
                 singleLine = true,
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Search recordings and folders") },
+                placeholder = { Text("Search name or date (e.g. July, 07)") },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
@@ -178,7 +179,7 @@ fun LibraryScreen(
                         onMove = { moveTarget = recording },
                         onExport = { exportTarget = recording },
                         onShare = { shareTarget = recording },
-                        onDelete = { deleteTarget = recording }
+                        onDelete = { if (confirmDelete) deleteTarget = recording else onDelete(recording) }
                     )
                 }
             }

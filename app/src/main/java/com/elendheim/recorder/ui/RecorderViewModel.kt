@@ -72,6 +72,10 @@ class RecorderViewModel(app: Application) : AndroidViewModel(app) {
     fun setHighContrast(value: Boolean) = settingsStore.setHighContrast(value)
     fun setShowPitch(value: Boolean) = settingsStore.setShowPitch(value)
     fun setMonitoring(value: Boolean) = settingsStore.setMonitoring(value)
+    fun setNamePrefix(value: String) = settingsStore.setNamePrefix(value)
+    fun setKeepScreenOn(value: Boolean) = settingsStore.setKeepScreenOn(value)
+    fun setConfirmDelete(value: Boolean) = settingsStore.setConfirmDelete(value)
+    fun resetNumbering() = settingsStore.resetNumbering()
 
     // --- Recording ---
 

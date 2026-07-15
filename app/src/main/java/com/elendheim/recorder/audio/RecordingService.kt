@@ -26,8 +26,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 /**
@@ -43,7 +41,6 @@ class RecordingService : Service() {
 
     private var pcmFile: File? = null
     private var wavName: String = ""
-    private var displayName: String = ""
     private var startedAt: Long = 0L
 
     override fun onCreate() {
@@ -65,8 +62,8 @@ class RecordingService : Service() {
         if (recorder.isRecording) return
 
         startedAt = System.currentTimeMillis()
-        val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(startedAt))
-        displayName = "Session $stamp"
+        // The display name (with its running number) is assigned at finalize, so
+        // a mic that fails to open never burns a number.
         wavName = "rec_${startedAt}.wav"
         pcmFile = File(cacheDir, "rec_${startedAt}.pcm")
 
@@ -119,7 +116,8 @@ class RecordingService : Service() {
 
             val byteRate = recorder.sampleRate * recorder.channels * recorder.bitsPerSample / 8
             val durationMs = if (byteRate > 0) wav.length().minus(44).coerceAtLeast(0) * 1000 / byteRate else 0
-            store.add(wavName, displayName, durationMs, startedAt)
+            val name = SettingsStore.get(applicationContext).nextRecordingName()
+            store.add(wavName, name, durationMs, startedAt)
             RecordingController.notifyFinished()
         }
         pcmFile = null

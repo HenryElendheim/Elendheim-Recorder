@@ -23,11 +23,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,10 +39,18 @@ import com.elendheim.recorder.audio.RecorderState
 fun RecordScreen(
     state: RecorderState,
     showPitch: Boolean,
+    keepScreenOn: Boolean,
     onToggleRecord: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
+
+    val view = LocalView.current
+    val holdScreen = keepScreenOn && state.isRecording
+    DisposableEffect(holdScreen) {
+        view.keepScreenOn = holdScreen
+        onDispose { view.keepScreenOn = false }
+    }
     Column(
         modifier = modifier
             .fillMaxSize()

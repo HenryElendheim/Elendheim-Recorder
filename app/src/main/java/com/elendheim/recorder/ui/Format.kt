@@ -26,4 +26,25 @@ object Format {
 
     fun date(epochMs: Long): String =
         SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()).format(Date(epochMs))
+
+    /**
+     * A lowercase bag of date tokens for searching: full date, day, month
+     * number, month names, year, weekday. So typing "07" finds July (and the
+     * 7th), "july" finds July, "2026" finds the year.
+     */
+    fun searchDateTokens(epochMs: Long): String {
+        val d = Date(epochMs)
+        val patterns = listOf("yyyy-MM-dd", "d", "dd", "MM", "MMM", "MMMM", "yyyy", "EEEE")
+        return patterns.joinToString(" ") {
+            SimpleDateFormat(it, Locale.getDefault()).format(d)
+        }.lowercase(Locale.getDefault())
+    }
+
+    /** True if [query] matches the recording's name or any of its date tokens. */
+    fun matches(displayName: String, createdAt: Long, query: String): Boolean {
+        val q = query.trim().lowercase(Locale.getDefault())
+        if (q.isEmpty()) return true
+        if (displayName.lowercase(Locale.getDefault()).contains(q)) return true
+        return searchDateTokens(createdAt).contains(q)
+    }
 }

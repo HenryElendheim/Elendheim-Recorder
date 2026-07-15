@@ -10,7 +10,9 @@ actually own — no cloud, no accounts, no analytics.
 - Long sessions survive screen-off and backgrounding (a foreground service
   keeps the mic alive with an ongoing notification).
 - A library of your takes: play with a scrubber, rename, delete, organise into
-  folders, and search by name.
+  folders, and search by name or date (type "July" or "07" to find that month).
+- New recordings get a name you set that counts up automatically, with the date
+  kept as its own field.
 - Export to WAV (lossless master) or MP3 (compact), saved wherever you choose
   or shared through the Android share sheet.
 - A settings menu with accessibility options: high contrast, a live pitch

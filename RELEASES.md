@@ -1,5 +1,13 @@
 # Releases
 
+## Elendheim Recorder v2.1
+
+A new red microphone app icon, plus quality-of-life settings: set the name new
+recordings get and it counts up automatically, keep the screen on while
+recording, and turn the delete confirmation on or off. Search now matches the
+date too, so typing "July" or "07" finds everything from that month. Dark mode,
+no cloud, no accounts.
+
 ## Elendheim Recorder v2.0
 
 Records from your phone mic, keeps a searchable library with folders, and

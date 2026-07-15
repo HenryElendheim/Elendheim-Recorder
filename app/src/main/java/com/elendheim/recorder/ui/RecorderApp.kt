@@ -34,7 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.elendheim.recorder.export.ExportFormat
 import com.elendheim.recorder.library.Recording
 
-private const val APP_VERSION = "v2.0"
+private const val APP_VERSION = "v2.1"
 
 @Composable
 fun RecorderApp(viewModel: RecorderViewModel = viewModel()) {
@@ -131,6 +131,7 @@ fun RecorderApp(viewModel: RecorderViewModel = viewModel()) {
             0 -> RecordScreen(
                 state = recorderState,
                 showPitch = settings.showPitch,
+                keepScreenOn = settings.keepScreenOn,
                 onToggleRecord = { onToggleRecord() },
                 modifier = Modifier.padding(padding)
             )
@@ -148,6 +149,7 @@ fun RecorderApp(viewModel: RecorderViewModel = viewModel()) {
                 onDeleteFolder = viewModel::deleteFolder,
                 onExport = { rec, format -> startExport(rec, format) },
                 onShare = viewModel::share,
+                confirmDelete = settings.confirmDelete,
                 modifier = Modifier.padding(padding)
             )
             else -> SettingsScreen(
@@ -155,6 +157,10 @@ fun RecorderApp(viewModel: RecorderViewModel = viewModel()) {
                 onHighContrast = viewModel::setHighContrast,
                 onShowPitch = viewModel::setShowPitch,
                 onMonitoring = viewModel::setMonitoring,
+                onNamePrefix = viewModel::setNamePrefix,
+                onKeepScreenOn = viewModel::setKeepScreenOn,
+                onConfirmDelete = viewModel::setConfirmDelete,
+                onResetNumbering = viewModel::resetNumbering,
                 appVersion = APP_VERSION,
                 modifier = Modifier.padding(padding)
             )

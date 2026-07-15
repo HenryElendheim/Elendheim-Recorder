@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +30,10 @@ fun SettingsScreen(
     onHighContrast: (Boolean) -> Unit,
     onShowPitch: (Boolean) -> Unit,
     onMonitoring: (Boolean) -> Unit,
+    onNamePrefix: (String) -> Unit,
+    onKeepScreenOn: (Boolean) -> Unit,
+    onConfirmDelete: (Boolean) -> Unit,
+    onResetNumbering: () -> Unit,
     appVersion: String,
     modifier: Modifier = Modifier
 ) {
@@ -37,6 +43,43 @@ fun SettingsScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
+        SectionHeader("Recording")
+        val nextName = "${settings.namePrefix.trim().ifEmpty { "Recording" }} ${settings.nameCounter}"
+        OutlinedTextField(
+            value = settings.namePrefix,
+            onValueChange = onNamePrefix,
+            singleLine = true,
+            label = { Text("Recording name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Next recording: $nextName",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onResetNumbering) {
+                Text("Reset numbering", color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        SettingSwitch(
+            title = "Keep screen on while recording",
+            subtitle = "Stops the screen sleeping mid-take.",
+            checked = settings.keepScreenOn,
+            onCheckedChange = onKeepScreenOn
+        )
+        SettingSwitch(
+            title = "Confirm before deleting",
+            subtitle = "Ask first when removing a recording.",
+            checked = settings.confirmDelete,
+            onCheckedChange = onConfirmDelete
+        )
+
+        Spacer(Modifier.height(24.dp))
         SectionHeader("Accessibility")
         SettingSwitch(
             title = "High contrast",
