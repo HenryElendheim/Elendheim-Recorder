@@ -1,5 +1,6 @@
 package com.elendheim.recorder.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -47,6 +49,8 @@ import androidx.compose.ui.unit.sp
 import com.elendheim.recorder.export.ExportFormat
 import com.elendheim.recorder.library.Recording
 
+private enum class SortMode { NEWEST, OLDEST, NAME }
+
 @Composable
 fun LibraryScreen(
     recordings: List<Recording>,
@@ -68,6 +72,8 @@ fun LibraryScreen(
     val colors = MaterialTheme.colorScheme
     var query by remember { mutableStateOf("") }
     var currentFolder by remember { mutableStateOf<String?>(null) }
+    var sortMode by remember { mutableStateOf(SortMode.NEWEST) }
+    var sortMenu by remember { mutableStateOf(false) }
 
     var renameTarget by remember { mutableStateOf<Recording?>(null) }
     var deleteTarget by remember { mutableStateOf<Recording?>(null) }
@@ -81,11 +87,21 @@ fun LibraryScreen(
     val searching = query.isNotBlank()
     val q = query.trim()
 
+    // System back steps up a level (out of a folder or search) before leaving.
+    BackHandler(enabled = searching || currentFolder != null) {
+        if (searching) query = "" else currentFolder = null
+    }
+
     val visibleFolders = if (searching) folders.filter { it.contains(q, ignoreCase = true) } else folders
-    val visibleRecordings = when {
+    val filteredRecordings = when {
         searching -> recordings.filter { Format.matches(it.displayName, it.createdAt, q) }
         currentFolder == null -> recordings.filter { it.folder.isEmpty() }
         else -> recordings.filter { it.folder.equals(currentFolder, ignoreCase = true) }
+    }
+    val visibleRecordings = when (sortMode) {
+        SortMode.NEWEST -> filteredRecordings.sortedByDescending { it.createdAt }
+        SortMode.OLDEST -> filteredRecordings.sortedBy { it.createdAt }
+        SortMode.NAME -> filteredRecordings.sortedBy { it.displayName.lowercase() }
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -110,6 +126,16 @@ fun LibraryScreen(
                     }
                 }
             )
+            Box {
+                IconButton(onClick = { sortMenu = true }) {
+                    Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort", tint = colors.onSurfaceVariant)
+                }
+                DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                    SortItem("Newest first", sortMode == SortMode.NEWEST) { sortMode = SortMode.NEWEST; sortMenu = false }
+                    SortItem("Oldest first", sortMode == SortMode.OLDEST) { sortMode = SortMode.OLDEST; sortMenu = false }
+                    SortItem("Name (A–Z)", sortMode == SortMode.NAME) { sortMode = SortMode.NAME; sortMenu = false }
+                }
+            }
             IconButton(onClick = { newFolderDialog = true }) {
                 Icon(Icons.Filled.CreateNewFolder, contentDescription = "New folder", tint = colors.primary)
             }
@@ -274,6 +300,14 @@ fun LibraryScreen(
 }
 
 @Composable
+private fun SortItem(label: String, selected: Boolean, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = { Text(if (selected) "•  $label" else label) },
+        onClick = onClick
+    )
+}
+
+@Composable
 private fun FolderRow(name: String, count: Int, onOpen: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(onClick = onOpen, color = colors.surface, modifier = Modifier.fillMaxWidth()) {
@@ -306,7 +340,10 @@ private fun RecordingRow(
     val isActive = playback.playingId == recording.id
     val isPlaying = isActive && playback.isPlaying
 
-    Card(colors = CardDefaults.cardColors(containerColor = colors.surface)) {
+    Card(
+        onClick = onTogglePlay,
+        colors = CardDefaults.cardColors(containerColor = colors.surface)
+    ) {
         Column(Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onTogglePlay) {

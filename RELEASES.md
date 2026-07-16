@@ -1,5 +1,13 @@
 # Releases
 
+## Elendheim Recorder v2.2
+
+Small polish pass. The intro now holds for about 1.3 seconds. Tap anywhere on a
+recording to play it, sort the library by newest, oldest or name, and use the
+back button to step out of a folder or search. If microphone access is off,
+the app now points you to settings instead of doing nothing, and confirms when
+a take is saved. Dark mode, no cloud, no accounts.
+
 ## Elendheim Recorder v2.1
 
 A new red microphone app icon, plus quality-of-life settings: set the name new

@@ -24,7 +24,11 @@ class MainActivity : ComponentActivity() {
             ElendheimRecorderTheme(highContrast = settings.highContrast) {
                 var showSplash by remember { mutableStateOf(true) }
                 if (showSplash) {
-                    ElendheimSplash(subWord = "Recorder") { showSplash = false }
+                    ElendheimSplash(
+                        subWord = "Recorder",
+                        holdMillis = 1000,
+                        fadeMillis = 150
+                    ) { showSplash = false }
                 } else {
                     RecorderApp()
                 }

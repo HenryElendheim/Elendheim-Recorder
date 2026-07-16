@@ -35,6 +35,7 @@ fun SettingsScreen(
     onConfirmDelete: (Boolean) -> Unit,
     onResetNumbering: () -> Unit,
     appVersion: String,
+    recordingCount: Int,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -118,6 +119,11 @@ fun SettingsScreen(
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = 15.sp,
             fontWeight = FontWeight.Medium
+        )
+        Text(
+            text = if (recordingCount == 1) "1 recording in your library" else "$recordingCount recordings in your library",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 14.sp
         )
         Text(
             text = "No cloud, no accounts, no network access. Your recordings stay on your phone.",

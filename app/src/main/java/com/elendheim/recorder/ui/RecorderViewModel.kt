@@ -58,7 +58,10 @@ class RecorderViewModel(app: Application) : AndroidViewModel(app) {
     init {
         refresh()
         viewModelScope.launch {
-            RecordingController.finished.collect { refresh() }
+            RecordingController.finished.collect {
+                refresh()
+                _messages.tryEmit("Recording saved")
+            }
         }
     }
 

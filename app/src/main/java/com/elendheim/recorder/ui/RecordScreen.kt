@@ -29,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -103,13 +105,17 @@ fun RecordScreen(
 @Composable
 private fun RecordButton(isRecording: Boolean, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
+    val haptics = LocalHapticFeedback.current
     val scale by animateFloatAsState(
         targetValue = if (isRecording) 0.92f else 1f,
         animationSpec = tween(200),
         label = "recordScale"
     )
     Surface(
-        onClick = onClick,
+        onClick = {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            onClick()
+        },
         shape = CircleShape,
         color = colors.primary,
         modifier = Modifier

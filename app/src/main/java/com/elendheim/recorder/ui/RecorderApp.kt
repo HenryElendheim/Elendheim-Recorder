@@ -1,10 +1,16 @@
 package com.elendheim.recorder.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LibraryMusic
@@ -34,11 +40,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.elendheim.recorder.export.ExportFormat
 import com.elendheim.recorder.library.Recording
 
-private const val APP_VERSION = "v2.1"
+private const val APP_VERSION = "v2.2"
 
 @Composable
 fun RecorderApp(viewModel: RecorderViewModel = viewModel()) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var selectedTab by remember { mutableIntStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -60,11 +67,27 @@ fun RecorderApp(viewModel: RecorderViewModel = viewModel()) {
         pendingExport = null
     }
 
+    fun openAppSettings() {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null)
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
         if (result[Manifest.permission.RECORD_AUDIO] == true) {
             viewModel.startRecording()
+        } else {
+            scope.launch {
+                val outcome = snackbarHostState.showSnackbar(
+                    message = "Microphone access is needed to record",
+                    actionLabel = "Settings"
+                )
+                if (outcome == SnackbarResult.ActionPerformed) openAppSettings()
+            }
         }
     }
 
@@ -162,6 +185,7 @@ fun RecorderApp(viewModel: RecorderViewModel = viewModel()) {
                 onConfirmDelete = viewModel::setConfirmDelete,
                 onResetNumbering = viewModel::resetNumbering,
                 appVersion = APP_VERSION,
+                recordingCount = library.size,
                 modifier = Modifier.padding(padding)
             )
         }
