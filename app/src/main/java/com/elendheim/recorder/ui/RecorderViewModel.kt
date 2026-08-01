@@ -5,6 +5,8 @@ import android.media.MediaPlayer
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.elendheim.recorder.audio.PitchAnalyzer
+import com.elendheim.recorder.audio.PitchFrame
 import com.elendheim.recorder.audio.RecordingController
 import com.elendheim.recorder.audio.RecordingService
 import com.elendheim.recorder.data.SettingsStore
@@ -49,6 +51,11 @@ class RecorderViewModel(app: Application) : AndroidViewModel(app) {
     private val _playback = MutableStateFlow(PlaybackState())
     val playback: StateFlow<PlaybackState> = _playback.asStateFlow()
 
+    // Pitch track of the recording currently playing (empty when off/none).
+    private val _pitchTrack = MutableStateFlow<List<PitchFrame>>(emptyList())
+    val pitchTrack: StateFlow<List<PitchFrame>> = _pitchTrack.asStateFlow()
+    private val trackCache = HashMap<String, List<PitchFrame>>()
+
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val messages: SharedFlow<String> = _messages.asSharedFlow()
 
@@ -74,6 +81,7 @@ class RecorderViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setHighContrast(value: Boolean) = settingsStore.setHighContrast(value)
     fun setShowPitch(value: Boolean) = settingsStore.setShowPitch(value)
+    fun setPianoRoll(value: Boolean) = settingsStore.setPianoRoll(value)
     fun setMonitoring(value: Boolean) = settingsStore.setMonitoring(value)
     fun setNamePrefix(value: String) = settingsStore.setNamePrefix(value)
     fun setKeepScreenOn(value: Boolean) = settingsStore.setKeepScreenOn(value)
@@ -95,6 +103,7 @@ class RecorderViewModel(app: Application) : AndroidViewModel(app) {
 
     fun delete(id: String) {
         if (_playback.value.playingId == id) stopPlayback()
+        trackCache.remove(id)
         store.delete(id)
         refresh()
     }
@@ -153,6 +162,29 @@ class RecorderViewModel(app: Application) : AndroidViewModel(app) {
         p.start()
         _playback.value = PlaybackState(recording.id, true, 0, p.duration)
         startPolling()
+        loadPitchTrack(recording)
+    }
+
+    /** Analyse (or reuse) the pitch track when pitch or the piano roll is on. */
+    private fun loadPitchTrack(recording: Recording) {
+        val s = settingsStore.current
+        if (!s.showPitch && !s.pianoRoll) {
+            _pitchTrack.value = emptyList()
+            return
+        }
+        val cached = trackCache[recording.id]
+        if (cached != null) {
+            _pitchTrack.value = cached
+            return
+        }
+        _pitchTrack.value = emptyList()
+        viewModelScope.launch {
+            val frames = withContext(Dispatchers.IO) {
+                PitchAnalyzer.analyze(store.fileFor(recording))
+            }
+            trackCache[recording.id] = frames
+            if (_playback.value.playingId == recording.id) _pitchTrack.value = frames
+        }
     }
 
     fun seekTo(ms: Int) {
@@ -168,6 +200,7 @@ class RecorderViewModel(app: Application) : AndroidViewModel(app) {
         }
         player = null
         _playback.value = PlaybackState()
+        _pitchTrack.value = emptyList()
     }
 
     private fun onPlaybackComplete() {

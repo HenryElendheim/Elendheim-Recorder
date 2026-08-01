@@ -29,6 +29,7 @@ fun SettingsScreen(
     settings: AppSettings,
     onHighContrast: (Boolean) -> Unit,
     onShowPitch: (Boolean) -> Unit,
+    onPianoRoll: (Boolean) -> Unit,
     onMonitoring: (Boolean) -> Unit,
     onNamePrefix: (String) -> Unit,
     onKeepScreenOn: (Boolean) -> Unit,
@@ -89,10 +90,16 @@ fun SettingsScreen(
             onCheckedChange = onHighContrast
         )
         SettingSwitch(
-            title = "Show pitch while recording",
-            subtitle = "Displays the note you're hitting, like C4 or F#3.",
+            title = "Show pitch",
+            subtitle = "Displays the note you're hitting while recording and while playing back, like C4 or F#3.",
             checked = settings.showPitch,
             onCheckedChange = onShowPitch
+        )
+        SettingSwitch(
+            title = "Piano roll while playing",
+            subtitle = "Visualises a recording's notes over time, with a moving playhead.",
+            checked = settings.pianoRoll,
+            onCheckedChange = onPianoRoll
         )
 
         Spacer(Modifier.height(24.dp))

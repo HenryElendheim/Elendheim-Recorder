@@ -1,5 +1,12 @@
 # Releases
 
+## Elendheim Recorder v2.3
+
+Pitch comes to playback. With "Show pitch" on, the note now appears as you
+listen back to a recording, not just while recording. Turn on the new "Piano
+roll" option in settings to see a recording's notes laid out over time with a
+moving playhead. Dark mode, no cloud, no accounts.
+
 ## Elendheim Recorder v2.2
 
 Small polish pass. The intro now holds for about 1.3 seconds. Tap anywhere on a

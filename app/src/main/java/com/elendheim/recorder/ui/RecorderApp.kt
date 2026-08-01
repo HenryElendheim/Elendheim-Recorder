@@ -40,7 +40,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.elendheim.recorder.export.ExportFormat
 import com.elendheim.recorder.library.Recording
 
-private const val APP_VERSION = "v2.2"
+private const val APP_VERSION = "v2.3"
 
 @Composable
 fun RecorderApp(viewModel: RecorderViewModel = viewModel()) {
@@ -54,6 +54,7 @@ fun RecorderApp(viewModel: RecorderViewModel = viewModel()) {
     val folders by viewModel.folders.collectAsState()
     val playback by viewModel.playback.collectAsState()
     val settings by viewModel.settings.collectAsState()
+    val pitchTrack by viewModel.pitchTrack.collectAsState()
 
     // Save-to-Files: the user picks a location, then we write the encoded bytes.
     var pendingExport by remember { mutableStateOf<Pair<Recording, ExportFormat>?>(null) }
@@ -173,12 +174,16 @@ fun RecorderApp(viewModel: RecorderViewModel = viewModel()) {
                 onExport = { rec, format -> startExport(rec, format) },
                 onShare = viewModel::share,
                 confirmDelete = settings.confirmDelete,
+                pitchTrack = pitchTrack,
+                showPitch = settings.showPitch,
+                pianoRoll = settings.pianoRoll,
                 modifier = Modifier.padding(padding)
             )
             else -> SettingsScreen(
                 settings = settings,
                 onHighContrast = viewModel::setHighContrast,
                 onShowPitch = viewModel::setShowPitch,
+                onPianoRoll = viewModel::setPianoRoll,
                 onMonitoring = viewModel::setMonitoring,
                 onNamePrefix = viewModel::setNamePrefix,
                 onKeepScreenOn = viewModel::setKeepScreenOn,

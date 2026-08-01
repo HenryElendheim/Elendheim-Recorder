@@ -15,9 +15,10 @@ actually own — no cloud, no accounts, no analytics.
   kept as its own field.
 - Export to WAV (lossless master) or MP3 (compact), saved wherever you choose
   or shared through the Android share sheet.
-- A settings menu with accessibility options: high contrast, a live pitch
-  display (C4, F#4 and so on) while recording, and headphone monitoring so you
-  can hear yourself as you go.
+- A settings menu with accessibility options: high contrast, a pitch display
+  (C4, F#4 and so on) while recording and while playing back, an optional piano
+  roll that visualises a recording's notes over time, and headphone monitoring
+  so you can hear yourself as you go.
 - Opens with the reusable Elendheim intro.
 
 ## Design

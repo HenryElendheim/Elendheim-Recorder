@@ -6,8 +6,8 @@ import kotlin.math.sqrt
 
 /**
  * A small pitch estimator: a YIN-style difference function on a PCM buffer,
- * turned into the nearest musical note (e.g. C4, F#3). Good enough to show the
- * note you are hitting while recording; it is not a tuner-grade instrument.
+ * turned into the nearest musical note. Good enough to show the note you are
+ * hitting or the shape of a melody; it is not a tuner-grade instrument.
  */
 object PitchDetector {
 
@@ -15,25 +15,25 @@ object PitchDetector {
         "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
     )
 
-    /** Returns a note label, or null when the signal is too quiet or unclear. */
-    fun detect(buffer: ShortArray, size: Int, sampleRate: Int): String? {
-        val n = minOf(size, 2048)
-        if (n < 1024) return null
+    const val NO_PITCH = -1
 
-        // Quiet frames have no meaningful pitch.
+    /** Nearest MIDI note for the buffer, or [NO_PITCH] when too quiet/unclear. */
+    fun detectMidi(buffer: ShortArray, size: Int, sampleRate: Int): Int {
+        val n = minOf(size, 2048)
+        if (n < 1024) return NO_PITCH
+
         var energy = 0.0
         for (i in 0 until n) {
             val s = buffer[i].toDouble()
             energy += s * s
         }
         val rms = sqrt(energy / n)
-        if (rms < 500.0) return null
+        if (rms < 500.0) return NO_PITCH
 
         val maxLag = n / 2
         val minLag = maxOf(2, sampleRate / 1600)   // ceiling of roughly 1600 Hz
         val window = n - maxLag
 
-        // Cumulative-mean-normalised difference function (YIN, simplified).
         val yin = DoubleArray(maxLag)
         var runningSum = 0.0
         for (lag in 1 until maxLag) {
@@ -46,7 +46,6 @@ object PitchDetector {
             yin[lag] = if (runningSum > 0.0) sum * lag / runningSum else 1.0
         }
 
-        // First dip below the threshold is the fundamental; refine to its local min.
         val threshold = 0.15
         var best = -1
         var lag = minLag
@@ -66,17 +65,27 @@ object PitchDetector {
                     best = l
                 }
             }
-            if (best < 0 || minVal > 0.4) return null
+            if (best < 0 || minVal > 0.4) return NO_PITCH
         }
 
         val freq = sampleRate.toDouble() / best
-        if (freq < 40.0 || freq > 2000.0) return null
+        if (freq < 40.0 || freq > 2000.0) return NO_PITCH
 
         val midi = (69.0 + 12.0 * (ln(freq / 440.0) / ln(2.0))).roundToInt()
-        if (midi < 24 || midi > 108) return null
+        if (midi < 24 || midi > 108) return NO_PITCH
+        return midi
+    }
 
+    /** Human-readable note name for a MIDI number, e.g. 60 -> "C4". */
+    fun noteName(midi: Int): String {
         val name = noteNames[((midi % 12) + 12) % 12]
         val octave = midi / 12 - 1
         return "$name$octave"
+    }
+
+    /** Note label for a buffer, or null when too quiet/unclear. */
+    fun detect(buffer: ShortArray, size: Int, sampleRate: Int): String? {
+        val midi = detectMidi(buffer, size, sampleRate)
+        return if (midi == NO_PITCH) null else noteName(midi)
     }
 }

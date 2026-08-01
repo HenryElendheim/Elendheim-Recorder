@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.elendheim.recorder.audio.PitchFrame
 import com.elendheim.recorder.export.ExportFormat
 import com.elendheim.recorder.library.Recording
 
@@ -67,6 +68,9 @@ fun LibraryScreen(
     onExport: (Recording, ExportFormat) -> Unit,
     onShare: (Recording, ExportFormat) -> Unit,
     confirmDelete: Boolean,
+    pitchTrack: List<PitchFrame>,
+    showPitch: Boolean,
+    pianoRoll: Boolean,
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
@@ -205,7 +209,10 @@ fun LibraryScreen(
                         onMove = { moveTarget = recording },
                         onExport = { exportTarget = recording },
                         onShare = { shareTarget = recording },
-                        onDelete = { if (confirmDelete) deleteTarget = recording else onDelete(recording) }
+                        onDelete = { if (confirmDelete) deleteTarget = recording else onDelete(recording) },
+                        pitchTrack = pitchTrack,
+                        showPitch = showPitch,
+                        pianoRoll = pianoRoll
                     )
                 }
             }
@@ -333,7 +340,10 @@ private fun RecordingRow(
     onMove: () -> Unit,
     onExport: () -> Unit,
     onShare: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    pitchTrack: List<PitchFrame>,
+    showPitch: Boolean,
+    pianoRoll: Boolean
 ) {
     val colors = MaterialTheme.colorScheme
     var menuOpen by remember { mutableStateOf(false) }
@@ -394,7 +404,21 @@ private fun RecordingRow(
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(Format.clock(playback.positionMs), color = colors.onSurfaceVariant, fontSize = 11.sp)
+                    if (showPitch) {
+                        Text(
+                            text = currentNote(pitchTrack, playback.positionMs) ?: "—",
+                            color = colors.primary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                     Text(Format.clock(duration), color = colors.onSurfaceVariant, fontSize = 11.sp)
+                }
+
+                if (pianoRoll && pitchTrack.isNotEmpty()) {
+                    val progress = if (duration > 0) playback.positionMs.toFloat() / duration else 0f
+                    Spacer(Modifier.height(8.dp))
+                    PianoRoll(frames = pitchTrack, progress = progress)
                 }
             }
         }

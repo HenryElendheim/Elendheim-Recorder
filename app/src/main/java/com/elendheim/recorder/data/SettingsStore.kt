@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 data class AppSettings(
     val highContrast: Boolean = false,
     val showPitch: Boolean = false,
+    val pianoRoll: Boolean = false,
     val monitoring: Boolean = false,
     val namePrefix: String = "Session",
     val keepScreenOn: Boolean = false,
@@ -33,6 +34,7 @@ class SettingsStore private constructor(context: Context) {
     private fun load() = AppSettings(
         highContrast = prefs.getBoolean(KEY_HIGH_CONTRAST, false),
         showPitch = prefs.getBoolean(KEY_SHOW_PITCH, false),
+        pianoRoll = prefs.getBoolean(KEY_PIANO_ROLL, false),
         monitoring = prefs.getBoolean(KEY_MONITORING, false),
         namePrefix = prefs.getString(KEY_NAME_PREFIX, "Session") ?: "Session",
         keepScreenOn = prefs.getBoolean(KEY_KEEP_SCREEN_ON, false),
@@ -42,6 +44,7 @@ class SettingsStore private constructor(context: Context) {
 
     fun setHighContrast(value: Boolean) = updateBool(KEY_HIGH_CONTRAST, value) { it.copy(highContrast = value) }
     fun setShowPitch(value: Boolean) = updateBool(KEY_SHOW_PITCH, value) { it.copy(showPitch = value) }
+    fun setPianoRoll(value: Boolean) = updateBool(KEY_PIANO_ROLL, value) { it.copy(pianoRoll = value) }
     fun setMonitoring(value: Boolean) = updateBool(KEY_MONITORING, value) { it.copy(monitoring = value) }
     fun setKeepScreenOn(value: Boolean) = updateBool(KEY_KEEP_SCREEN_ON, value) { it.copy(keepScreenOn = value) }
     fun setConfirmDelete(value: Boolean) = updateBool(KEY_CONFIRM_DELETE, value) { it.copy(confirmDelete = value) }
@@ -77,6 +80,7 @@ class SettingsStore private constructor(context: Context) {
     companion object {
         private const val KEY_HIGH_CONTRAST = "high_contrast"
         private const val KEY_SHOW_PITCH = "show_pitch"
+        private const val KEY_PIANO_ROLL = "piano_roll"
         private const val KEY_MONITORING = "monitoring"
         private const val KEY_NAME_PREFIX = "name_prefix"
         private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
